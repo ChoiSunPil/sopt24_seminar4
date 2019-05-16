@@ -25,7 +25,7 @@ connection.query(selectUserQuery,[id],async(err, result)=>{
   }
   else if(result.length < 1)
   {
-    res.send(utils.successFalse(statusCode.NO_CONTENTS, responseMessage.ID_OR_PW_WRONG_VALUE))
+    res.send(utils.successFalse(statusCode.NO_CONTENT, responseMessage.ID_OR_PW_WRONG_VALUE))
   }
   else
   {
@@ -36,7 +36,7 @@ connection.query(selectUserQuery,[id],async(err, result)=>{
         }
         res.send(utils.successTrue(statusCode.OK,responseMessage.LOGIN_SUCCESS,jsonResult))
     }).catch(()=>{
-        res.send(utils.successTrue(statusCode.OK,responseMessage.ID_OR_PW_WRONG_VALUE))
+        res.send(utils.successFalse(statusCode.NO_CONTENT,responseMessage.ID_OR_PW_WRONG_VALUE))
     })
   }
  

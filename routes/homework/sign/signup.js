@@ -32,7 +32,7 @@ connection.query(selectUserQuery,[req.body.id],async(err, result)=>{
         {
             //중복 아이디 오류
             console.log("중복 아이디 오류")
-            res.send(utils.successFalse(statusCode.NO_CONTENTS, responseMessage.ALREADY_USER))
+            res.send(utils.successFalse(statusCode.NO_CONTENT, responseMessage.ALREADY_USER))
     
         }
         else{
