@@ -11,7 +11,8 @@ const selectAllBoardQuery = 'SELECT  boardIdx  , id AS writer ,title,content , w
 const selectUserBoardQuery = 'SELECT  boardIdx  , id AS writer ,title,content , writetime FROM board INNER JOIN user ON board.writer = user.userIdx WHERE id = ?'
 const insertBoardQuery = "INSERT INTO board (writer,title,content,boardPw,salt) VALUES (?,?,?,?,?)"
 const selectBoardByIdxQuery  = 'SELECT *FROM board WHERE boardIdx = ?'
-const deleteBoard = 'DELETE from board where boardIdx = ?'
+const deleteBoardQuery = 'DELETE from board where boardIdx = ?'
+const updateBoardQuery = "UPDATE board SET title = ?,content = ?, writetime = now() WHERE boardIdx = ?"
 router.get('/',(req,res)=>{
 connection.query(selectAllBoardQuery,(err,result)=>{
 if(err)
@@ -70,11 +71,52 @@ router.post('/',async(req,res)=>{
     })
 })
 router.put('/',(req,res)=>{
+    if(!req.body.title || !req.body.content || !req.body.boardPw|| !req.body.boardIdx)
+    {
+    //요청 바디값 오류
+    res.send(utils.successFalse(statusCode.BAD_REQUEST,responseMessage.NULL_VALUE))
+    return
+    }
 
-
-
-
-})
+    let boardIdx = req.body.boardIdx
+    let boardPw = req.body.boardPw
+    let boardContent = req.body.content
+    let boardTitle = req.body.title
+    connection.query(selectBoardByIdxQuery,[boardIdx],async(err,result)=>{
+        if(err)
+        {
+            console.log(err)
+            res.send(utils.successFalse(statusCode.DB_ERROR,responseMessage.DB_ERR))
+        }
+        else
+        {
+            
+            if(result.length <1)
+            {
+                res.send(utils.successFalse(statusCode.NO_CONTENT,responseMessage.NO_TABLE))
+            }
+            else
+            {
+            console.log(result[0])    
+            await encryption.asyncVerifyConsistency(boardPw,result[0].salt,result[0].boardPw).then(()=>{
+            connection.query(updateBoardQuery,[boardTitle,boardContent,boardIdx],(err,result)=>{
+               if(err)
+               {
+                console.log(err)
+                res.send(utils.successFalse(statusCode.DB_ERROR,responseMessage.DB_ERR))
+               }
+               else
+               {
+                res.send(utils.successTrue(statusCode.OK,responseMessage.MODIFY_TABLE_SUCCESS))
+               }
+            })
+        }).catch(()=>{
+            res.send(utils.successFalse(statusCode.NO_CONTENT,responseMessage.WRONG_TABLE_PW))
+        })
+        }
+        } 
+        })
+        })
 router.delete('/',(req,res)=>{
 let boardIdx = req.body.boardIdx
 let boardPw = req.body.boardPw
@@ -103,7 +145,7 @@ else
     {
     console.log(result[0])    
     await encryption.asyncVerifyConsistency(boardPw,result[0].salt,result[0].boardPw).then(()=>{
-    connection.query(deleteBoard,[boardIdx],(err,result)=>{
+    connection.query(deleteBoardQuery,[boardIdx],(err,result)=>{
        if(err)
        {
         console.log(err)
