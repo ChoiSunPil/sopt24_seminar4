@@ -15,5 +15,6 @@ module.exports = {
     ALREADY_TABLE: "이미 있는 게시물 ID 입니다.",
     NO_TABLE: "존재하지 않는 게시물 입니다.",
     LOGIN_SUCCESS: "로그인 성공",
-    DB_ERR: "데이터베이스 내부 에러"
+    DB_ERR: "데이터베이스 내부 에러",
+    WRONG_TABLE_PW : "게시물 비밀번호가 일치하지 않습니다."
 };

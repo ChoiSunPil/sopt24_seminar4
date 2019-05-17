@@ -10,6 +10,8 @@ const statusCode = require(path.join(modulePath,'./statusCode.js'))
 const selectAllBoardQuery = 'SELECT  boardIdx  , id AS writer ,title,content , writetime FROM board INNER JOIN user ON board.writer = user.userIdx '
 const selectUserBoardQuery = 'SELECT  boardIdx  , id AS writer ,title,content , writetime FROM board INNER JOIN user ON board.writer = user.userIdx WHERE id = ?'
 const insertBoardQuery = "INSERT INTO board (writer,title,content,boardPw,salt) VALUES (?,?,?,?,?)"
+const selectBoardByIdxQuery  = 'SELECT *FROM board WHERE boardIdx = ?'
+const deleteBoard = 'DELETE from board where boardIdx = ?'
 router.get('/',(req,res)=>{
 connection.query(selectAllBoardQuery,(err,result)=>{
 if(err)
@@ -53,11 +55,12 @@ router.post('/',async(req,res)=>{
     return
     }
 
-    let hashJson = await encryption.asyncCipher(req.body.password)
-    connection.query(insertBoardQuery,[req.body.writer,req.body.title,hashJson.cryptoPw,hashJson.salt],(err,result)=>{
+    let hashJson = await encryption.asyncCipher(req.body.boardPw)
+    connection.query(insertBoardQuery,[req.body.writer,req.body.title,req.body.content,hashJson.cryptoPw,hashJson.salt],(err,result)=>{
 
         if(err)
         {
+            console.log(err)
             res.send(utils.successFalse(statusCode.DB_ERROR,responseMessage.DB_ERR))
         }
         else
@@ -69,14 +72,54 @@ router.post('/',async(req,res)=>{
 router.put('/',(req,res)=>{
 
 
-    
+
 
 })
 router.delete('/',(req,res)=>{
-
-
-
-
+let boardIdx = req.body.boardIdx
+let boardPw = req.body.boardPw
+console.log(req.body)
+console.log(boardIdx+" "+boardPw)
+if(boardIdx == undefined|| boardPw == undefined)
+{
+//요청 바디값 오류
+res.send(utils.successFalse(statusCode.BAD_REQUEST,responseMessage.NULL_VALUE))
+return
+}
+connection.query(selectBoardByIdxQuery,[boardIdx],async(err,result)=>{
+if(err)
+{
+    console.log(err)
+    res.send(utils.successFalse(statusCode.DB_ERROR,responseMessage.DB_ERR))
+}
+else
+{
+    
+    if(result.length <1)
+    {
+        res.send(utils.successFalse(statusCode.NO_CONTENT,responseMessage.NO_TABLE))
+    }
+    else
+    {
+    console.log(result[0])    
+    await encryption.asyncVerifyConsistency(boardPw,result[0].salt,result[0].boardPw).then(()=>{
+    connection.query(deleteBoard,[boardIdx],(err,result)=>{
+       if(err)
+       {
+        console.log(err)
+        res.send(utils.successFalse(statusCode.DB_ERROR,responseMessage.DB_ERR))
+       }
+       else
+       {
+        res.send(utils.successTrue(statusCode.OK,responseMessage.DELETE_TABLE_SUCCESS))
+       }
+    })
+}).catch(()=>{
+    res.send(utils.successFalse(statusCode.NO_CONTENT,responseMessage.WRONG_TABLE_PW))
+})
+}
+} 
+})
 })
 
 module.exports = router;
